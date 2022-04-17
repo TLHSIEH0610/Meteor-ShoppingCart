@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@types/meteor": "^1.4.81",
+    "@types/meteor-roles": "^1.2.33",
     "@types/mocha": "^8.2.3",
     "@types/react": "^17.0.30",
     "@types/react-dom": "^17.0.9",

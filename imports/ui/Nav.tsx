@@ -5,34 +5,61 @@ import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import Menu from "@mui/material/Menu";
-// import MenuIcon from "@mui/icons-material/Menu";
+import { useTracker } from "meteor/react-meteor-data";
 import Container from "@mui/material/Container";
 import Button from "@mui/material/Button";
 import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
 import Avatar from "@mui/material/Avatar";
-import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
-
-const pages = ["Products", "Admin"];
-const settings = ["Logout"];
+import { useNavigate, useLocation } from "react-router-dom";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import { CartsCollection } from "/imports/db/cartdCollection";
+import { Roles } from "meteor/alanning:roles";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 
 const Nav = () => {
-  //   const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
-  const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
+  const user = useTracker(() => Meteor.user());
+  const isAdmin = useTracker(() => {
+    if (!user) {
+      return;
+    }
 
-  //   const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
-  //     setAnchorElNav(event.currentTarget);
-  //   };
-  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorElUser(event.currentTarget);
+    return Roles.userIsInRole(user._id, ["admin"]);
+  });
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [anchorElCart, setAnchorElCart] = useState<null | HTMLElement>(null);
+
+  const { cart }: any = useTracker(() => {
+    const handler = Meteor.subscribe("cart.all");
+
+    if (!handler.ready()) {
+      return { cart: [], isLoading: true };
+    }
+
+    const cart = CartsCollection.find().fetch();
+
+    return { cart, isLoading: false };
+  });
+  console.log(cart);
+  const auth = () => {
+    if (user) {
+      Meteor.logout();
+    }
+    navigate("/login");
   };
 
-  //   const handleCloseNavMenu = () => {
-  //     setAnchorElNav(null);
-  //   };
+  const handleOpenCartMenu = (event: React.MouseEvent<HTMLElement>) => {
+    if (!user) {
+      navigate("/login");
+    }
+    setAnchorElCart(event.currentTarget);
+  };
 
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
+  const handleCloseCartMenu = () => {
+    setAnchorElCart(null);
   };
 
   return (
@@ -48,74 +75,35 @@ const Nav = () => {
             Back2Cart
           </Typography>
 
-          {/* <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
-            <IconButton
-              size="large"
-              aria-label="account of current user"
-              aria-controls="menu-appbar"
-              aria-haspopup="true"
-              onClick={handleOpenNavMenu}
-              color="inherit"
-            >
-              <MenuIcon />
-            </IconButton>
-            <Menu
-              id="menu-appbar"
-              anchorEl={anchorElNav}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "left",
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "left",
-              }}
-              open={Boolean(anchorElNav)}
-              onClose={handleCloseNavMenu}
-              sx={{
-                display: { xs: "block", md: "none" },
-              }}
-            >
-              {pages.map((page) => (
-                <MenuItem key={page} onClick={handleCloseNavMenu}>
-                  <Typography textAlign="center">{page}</Typography>
-                </MenuItem>
-              ))}
-            </Menu>
-          </Box> */}
-          {/* <Typography
-            variant="h6"
-            noWrap
-            component="div"
-            sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}
-          >
-            LOGO
-          </Typography> */}
           <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
-            {pages.map((page) => (
+            <Button
+              sx={{ my: 2, color: "white", display: "block" }}
+              onClick={() => navigate("/")}
+            >
+              Goods
+            </Button>
+            {isAdmin && (
               <Button
-                key={page}
-                // onClick={handleCloseNavMenu}
                 sx={{ my: 2, color: "white", display: "block" }}
+                onClick={() => navigate("/admin")}
               >
-                {page}
+                Admin
               </Button>
-            ))}
+            )}
           </Box>
 
           <Box sx={{ flexGrow: 0 }}>
-            <Tooltip title="Open settings">
-              <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+            <Tooltip title="View Cart">
+              <IconButton onClick={handleOpenCartMenu} sx={{ p: 0 }}>
                 <Avatar>
-                  <AccountCircleOutlinedIcon />
+                  <ShoppingCartIcon />
                 </Avatar>
               </IconButton>
             </Tooltip>
             <Menu
               sx={{ mt: "45px" }}
               id="menu-appbar"
-              anchorEl={anchorElUser}
+              anchorEl={anchorElCart}
               anchorOrigin={{
                 vertical: "top",
                 horizontal: "right",
@@ -125,16 +113,38 @@ const Nav = () => {
                 vertical: "top",
                 horizontal: "right",
               }}
-              open={Boolean(anchorElUser)}
-              onClose={handleCloseUserMenu}
+              open={Boolean(anchorElCart)}
+              onClose={handleCloseCartMenu}
             >
-              {settings.map((setting) => (
-                <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                  <Typography textAlign="center">{setting}</Typography>
+              {cart[0]?.goods?.map((good: any) => (
+                <MenuItem key={good.good_id}>
+                  <Typography textAlign="center">
+                    {good.name} {good.quantities}
+                  </Typography>
+                  <IconButton
+                    onClick={() => Meteor.call("cart.add", good.good_id)}
+                    sx={{ p: 0 }}
+                  >
+                    <AddCircleOutlineIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => Meteor.call("cart.deduct", good.good_id)}
+                    sx={{ p: 0 }}
+                  >
+                    <RemoveCircleOutlineIcon />
+                  </IconButton>
                 </MenuItem>
               ))}
             </Menu>
           </Box>
+          {location?.pathname !== "/login" && (
+            <Button
+              onClick={auth}
+              sx={{ my: 2, color: "white", display: "block" }}
+            >
+              {user ? "logout" : "login"}
+            </Button>
+          )}
         </Toolbar>
       </Container>
     </AppBar>

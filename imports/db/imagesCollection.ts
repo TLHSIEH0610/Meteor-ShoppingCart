@@ -2,7 +2,7 @@ import { Meteor } from "meteor/meteor";
 //@ts-ignore
 import { FilesCollection } from "meteor/ostrio:files";
 
-const Images = new FilesCollection({
+export const ImagesCollection = new FilesCollection({
   collectionName: "Images",
   storagePath: "public/images",
   // downloadRoute: "public/images",
@@ -32,14 +32,12 @@ const Images = new FilesCollection({
   // },
 });
 
-if (Meteor.isClient) {
-  Meteor.subscribe("files.images.all");
-}
+// if (Meteor.isClient) {
+//   Meteor.subscribe("files.images.all");
+// }
 
-if (Meteor.isServer) {
-  Meteor.publish("files.images.all", function () {
-    return Images.find().cursor;
-  });
-}
-
-export default Images;
+// if (Meteor.isServer) {
+//   Meteor.publish("files.images.all", function () {
+//     return Images.find().cursor;
+//   });
+// }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, Fragment } from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
@@ -10,13 +10,13 @@ import Container from "@mui/material/Container";
 import Button from "@mui/material/Button";
 import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
-import Avatar from "@mui/material/Avatar";
 import { useNavigate, useLocation } from "react-router-dom";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { CartsCollection } from "/imports/db/cartdCollection";
 import { Roles } from "meteor/alanning:roles";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
+import Grid from "@mui/material/Grid";
 
 const Nav = () => {
   const user = useTracker(() => Meteor.user());
@@ -39,11 +39,11 @@ const Nav = () => {
       return { cart: [], isLoading: true };
     }
 
-    const cart = CartsCollection.find().fetch();
+    const cart = CartsCollection.find({ userId: user?._id }).fetch();
 
     return { cart, isLoading: false };
   });
-  console.log(cart);
+
   const auth = () => {
     if (user) {
       Meteor.logout();
@@ -91,59 +91,78 @@ const Nav = () => {
               </Button>
             )}
           </Box>
-
-          <Box sx={{ flexGrow: 0 }}>
-            <Tooltip title="View Cart">
-              <IconButton onClick={handleOpenCartMenu} sx={{ p: 0 }}>
-                <Avatar>
-                  <ShoppingCartIcon />
-                </Avatar>
-              </IconButton>
-            </Tooltip>
-            <Menu
-              sx={{ mt: "45px" }}
-              id="menu-appbar"
-              anchorEl={anchorElCart}
-              anchorOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-              open={Boolean(anchorElCart)}
-              onClose={handleCloseCartMenu}
-            >
-              {cart[0]?.goods?.map((good: any) => (
-                <MenuItem key={good.good_id}>
-                  <Typography textAlign="center">
-                    {good.name} {good.quantities}
-                  </Typography>
-                  <IconButton
-                    onClick={() => Meteor.call("cart.add", good.good_id)}
-                    sx={{ p: 0 }}
-                  >
-                    <AddCircleOutlineIcon />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => Meteor.call("cart.deduct", good.good_id)}
-                    sx={{ p: 0 }}
-                  >
-                    <RemoveCircleOutlineIcon />
-                  </IconButton>
-                </MenuItem>
-              ))}
-            </Menu>
-          </Box>
           {location?.pathname !== "/login" && (
-            <Button
-              onClick={auth}
-              sx={{ my: 2, color: "white", display: "block" }}
-            >
-              {user ? "logout" : "login"}
-            </Button>
+            <Fragment>
+              <Box sx={{ flexGrow: 0 }}>
+                <Tooltip title="View Cart">
+                  <IconButton
+                    onClick={handleOpenCartMenu}
+                    sx={{ p: 0, color: "white", mr: 2 }}
+                  >
+                    <ShoppingCartIcon />
+                  </IconButton>
+                </Tooltip>
+                <Menu
+                  sx={{ mt: "45px" }}
+                  id="menu-appbar"
+                  anchorEl={anchorElCart}
+                  anchorOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
+                  }}
+                  keepMounted
+                  transformOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
+                  }}
+                  open={Boolean(anchorElCart)}
+                  onClose={handleCloseCartMenu}
+                >
+                  {cart[0]?.goods?.map((good: any) => (
+                    <MenuItem key={good.good_id} sx={{ minWidth: 230 }}>
+                      <Grid container spacing={8}>
+                        <Grid item xs={4}>
+                          <Typography textAlign="left">{good.name}</Typography>
+                          {/* <Typography textAlign="left">{good.price}</Typography> */}
+                        </Grid>
+                        <Grid item xs={8}>
+                          <IconButton
+                            onClick={() =>
+                              Meteor.call("cart.add", good.good_id)
+                            }
+                            sx={{ p: 0 }}
+                          >
+                            <AddCircleOutlineIcon />
+                          </IconButton>
+                          <Typography
+                            textAlign="center"
+                            component="span"
+                            sx={{ mr: 1, ml: 1 }}
+                          >
+                            {good.quantities}
+                          </Typography>
+                          <IconButton
+                            onClick={() =>
+                              Meteor.call("cart.deduct", good.good_id)
+                            }
+                            sx={{ p: 0 }}
+                          >
+                            <RemoveCircleOutlineIcon />
+                          </IconButton>
+                        </Grid>
+                      </Grid>
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </Box>
+
+              <Button
+                onClick={auth}
+                sx={{ my: 2, color: "white", display: "block" }}
+              >
+                {user ? "logout" : "login"}
+              </Button>
+            </Fragment>
           )}
         </Toolbar>
       </Container>

@@ -1,7 +1,7 @@
 import { Meteor } from "meteor/meteor";
 import { GoodsCollection } from "/imports/db/goodsCollection";
 import { ImagesCollection } from "/imports/db/imagesCollection";
-import { CartsCollection } from "/imports/db/cartdCollection";
+// import { CartsCollection } from "/imports/db/cartdCollection";
 import { Accounts } from "meteor/accounts-base";
 import "/imports/api/server/goodsMethods";
 import "/imports/api/server/goodsPublication";
@@ -17,19 +17,19 @@ const SEED_PASSWORD = "back2dev";
 Meteor.startup(() => {
   //create default admin user
   if (!Accounts.findUserByUsername(SEED_USERNAME)) {
-    Accounts.createUser({
+    const id = Accounts.createUser({
       username: SEED_USERNAME,
       password: SEED_PASSWORD,
     });
-  } else {
-    const user = Accounts.findUserByUsername(SEED_USERNAME);
-    const id = user?._id;
+
     //@ts-ignore
     if (Meteor.roleAssignment.find({ "user._id": id }).count() === 0) {
-      Roles.createRole("admin");
+      //@ts-ignore
+      Roles.createRole("admin", { unlessExists: true });
       Roles.addUsersToRoles(id!, "admin");
     }
   }
+
   //insert some goods...
   if (!ImagesCollection.find().count()) {
     ImagesCollection.load(
